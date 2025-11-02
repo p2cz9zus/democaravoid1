@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Vehicle Controller (Gemini Integrated)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght=400..900&family=Montserrat:wght=300..700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&family=Montserrat:wght@300..700&display=swap" rel="stylesheet">
     <style>
         /* グローバルスタイル */
         body {
@@ -17,7 +17,7 @@
             align-items: center;
             min-height: 100vh;
             padding: 1rem;
-            /* overflow: hidden; は削除済み */
+            box-sizing: border-box; /* パディングを考慮してサイズ計算 */
         }
         .container {
             width: 100%;
@@ -26,9 +26,9 @@
             border-radius: 1.5rem;
             box-shadow: 0 10px 30px rgba(0, 255, 255, 0.15), 0 0 5px rgba(0, 255, 255, 0.2);
             border: 1px solid rgba(0, 255, 255, 0.3);
-            overflow: hidden;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
         /* ヘッダー */
@@ -168,7 +168,7 @@
             pointer-events: auto; 
         }
 
-        /* タッチコントロールオーバーレイ */
+        /* タッチコントロールオーバーレイ（縦向きでも見えるように常に存在） */
         #touchControlOverlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%; z-index: 15; 
@@ -190,27 +190,7 @@
         #topZone { height: 35%; display: flex; flex-direction: row; }
         #bottomZone { height: 65%; display: flex; flex-direction: row; }
         
-        /* 横向き (Landscape) 最適化 CSS */
-        @media (orientation: landscape) {
-            body { padding: 0; min-height: 100vh; display: block; }
-            .container {
-                max-width: none; width: 100vw; height: 100vh; border-radius: 0; box-shadow: none; border: none; margin: 0; overflow: hidden;
-            }
-            .header { display: none; } /* ヘッダー非表示 */
-            #controlPanel { display: none !important; }
-            .camera-container {
-                width: 100%; height: 100%; padding-top: 0; border-radius: 0; box-shadow: none; border: none; margin: 0;
-            }
-            #touchControlOverlay { pointer-events: auto; }
-            #aiOverlay { align-items: flex-start; } /* 横向き時はAI Decision Textを左上に移動 */
-            #aiDecisionText { 
-                align-self: flex-start; 
-                margin-top: 0; 
-                margin-left: 0;
-                font-size: 1.5rem; /* 大きく */
-                padding: 0.8rem 1.2rem;
-            }
-        }
+        /* 旧ランドスケープ最適化CSSを削除しました */
         
     </style>
 </head>
@@ -234,11 +214,13 @@
     <!-- カメラフィードとAIオーバーレイ -->
     <div class="camera-container">
         <div id="viewport">
+            <!-- 動画要素 -->
             <video id="cameraFeed" autoplay playsinline></video>
+            <!-- AI描画キャンバス -->
             <canvas id="aiCanvas"></canvas> 
         </div>
         
-        <!-- タッチコントロールオーバーレイ -->
+        <!-- タッチコントロールオーバーレイ (AIモード以外で手動操作用) -->
         <div id="touchControlOverlay">
             <div id="topZone">
                 <div id="tl" class="touch-zone"></div> 
@@ -257,15 +239,17 @@
         </div>
     </div>
 
-    <!-- 制御パネル (縦向き/PC表示用) -->
+    <!-- 制御パネル (常に表示) -->
     <div id="controlPanel" class="w-full">
         <div class="p-5 border-t border-gray-700 mt-4">
             <h2 class="text-lg font-semibold mb-3 text-cyan-400">システムステータス</h2>
             <div class="flex flex-col space-y-3">
+                <!-- Arduinoステータス -->
                 <div id="arduinoStatus" class="status-box status-wait">
                     <span class="status-icon">●</span> Arduino State: WAIT_START (待機中)
                 </div>
                 
+                <!-- AI決定出力 -->
                 <div id="decisionOutput" class="status-box status-neutral flex justify-between items-center">
                     <div>
                         <span class="status-icon">⚡</span> AI Decision: 監視中
@@ -276,6 +260,7 @@
                     </button>
                 </div>
                 
+                <!-- コマンドログ -->
                 <div id="commandLog" class="status-box status-neutral">
                     <div class="flex justify-between items-center mb-1">
                         <span class="status-icon">▶</span> Command Log
@@ -291,12 +276,13 @@
             </div>
         </div>
 
+        <!-- 操作/起動ボタン -->
         <div class="p-5 border-t border-gray-700">
             <h2 class="text-lg font-semibold mb-3 text-cyan-400">操作/起動</h2>
             <div class="flex space-x-2">
                  <!-- 起動ボタン -->
                 <button id="startCameraButton" class="control-button bg-green-500 hover:bg-green-600 flex-grow">カメラ/システム起動</button>
-                <!-- ヘルプボタン (追加) -->
+                <!-- ヘルプボタン -->
                 <button onclick="showHelpModal()" class="control-button bg-indigo-500 hover:bg-indigo-600 flex-shrink-0 w-24">ヘルプ 💡</button>
             </div>
         </div>
@@ -348,9 +334,9 @@
                 });
                 
                 if (response.status === 429 && attempt < maxRetries - 1) {
-                    const delay = Math.pow(2, attempt) * 1000; // 指数バックオフ
+                    const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
                     await new Promise(resolve => setTimeout(resolve, delay));
-                    continue; // リトライ
+                    continue; // Retry
                 }
                 
                 const result = await response.json();
@@ -556,11 +542,12 @@
     // VI. ヘルプ/補足情報モーダル
     // ******************************************************
     function showHelpModal() {
+        // HTMLコンテンツとしてモーダルに表示するヘルプ情報を定義
         const helpContent = `
             <div class="help-section">
                 <h3>システム概要</h3>
                 <p>このアプリケーションは、スマートフォンカメラの映像をAIに見立て、仮想的なAIコマンド（FORWARD/TURN_L/TURN_R）をシミュレーションのArduinoに送信するデモです。</p>
-                <p>手動モードでは、横向きにした際の画面下の3つのエリアをタップすることで操作が可能です。</p>
+                <p>手動モードでは、画面上のカメラ映像エリアの下部3分の2のエリアをタップすることで操作が可能です。</p>
             </div>
             <div class="help-section">
                 <h3>操作手順</h3>
@@ -569,7 +556,6 @@
                     <li><strong>WAIT_START</strong> ステータスの間は操作待機中です。</li>
                     <li>デモ用機能: ` + '`simulateArduinoPieceAction(\'place_piece\')`' + `をコンソールで実行すると **DRIVING** 状態に移行します。</li>
                     <li>**DRIVING** 状態になるとAI制御が開始されます。</li>
-                    <li>端末を横向きにすると、全画面のタッチ操作UIに切り替わります。</li>
                 </ol>
             </div>
             <div class="help-section">
@@ -589,6 +575,7 @@
                 </ul>
             </div>
         `;
+        // モーダルを表示
         showModal("💡 ヘルプと補足情報", helpContent, true);
     }
 
@@ -633,6 +620,7 @@
     }
 
     async function aiControlLoop() {
+        // AIモードではない、または他の処理が実行中の場合はスキップ
         if (arduinoState !== 'DRIVING' || isProcessing || isModalVisible) {
              if (arduinoState !== 'DRIVING') {
                  if (aiCtx && aiCanvas) { aiCtx.clearRect(0, 0, aiCanvas.width, aiCanvas.height); }
@@ -686,6 +674,7 @@
         aiCtx = aiCanvas.getContext('2d');
         
         try {
+            // カメラを起動
             const stream = await navigator.mediaDevices.getUserMedia({ 
                 video: { width: CAMERA_WIDTH, height: CAMERA_HEIGHT, facingMode: 'environment' } 
             });
@@ -700,6 +689,7 @@
                     let afSuccess = false;
 
                     const settings = track.getSettings();
+                    // フロントカメラの場合、映像を反転させる (背面カメラを想定しているため)
                     if (settings.facingMode === 'user' || settings.facingMode === 'left') {
                          videoElement.style.transform = 'scaleX(-1)'; 
                     } else {
@@ -707,6 +697,7 @@
                     }
                     
                     try {
+                        // オートフォーカス設定
                         const capabilities = track.getCapabilities();
                         if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
                             await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
@@ -729,8 +720,7 @@
                 document.getElementById('aiDecisionText').textContent = "AI監視中...";
                 document.getElementById('startCameraButton').textContent = "システム稼働中";
                 document.getElementById('startCameraButton').disabled = true;
-                setupTouchControls();
-
+                setupTouchControls(); // タッチ操作を有効化
             };
         } catch (err) {
             document.getElementById('aiDecisionText').textContent = "⚠ カメラ起動エラー: HTTPS環境と権限が必要です";
@@ -785,9 +775,11 @@
         };
 
         touchZones.forEach(zone => {
+            // タッチイベント
             zone.addEventListener('touchstart', startTouch, { passive: false });
             zone.addEventListener('touchend', endTouch, { passive: false });
             zone.addEventListener('touchcancel', endTouch, { passive: false }); 
+            // マウスイベント (PCからの操作用)
             zone.addEventListener('mousedown', startTouch);
             zone.addEventListener('mouseup', endTouch);
             zone.addEventListener('mouseleave', endTouch);
@@ -796,6 +788,7 @@
         btEmulator.log("Manual Control: タッチ操作を有効化しました。", 'info');
     }
     
+    // 起動ボタンにイベントリスナーを設定
     document.getElementById('startCameraButton') && document.getElementById('startCameraButton').addEventListener('click', startCamera);
 
     // ******************************************************
@@ -806,7 +799,6 @@
         switch (action) {
             case 'place_piece':
                 if (arduinoState === 'WAIT_START' || arduinoState === 'PAUSE') { receiveStatus('DRIVING_START'); } 
-                // PAUSE_TRIPPEDとDRIVING_RESUMEDは同じ処理でDRIVINGに戻るように統合
                 break;
             case 'remove_piece':
                 if (arduinoState === 'DRIVING') { receiveStatus('PAUSE_TRIPPED'); } 
@@ -819,6 +811,7 @@
         btEmulator.log(`SIMULATED: Arduino Status Change: ${arduinoState}`, 'info');
     };
     
+    // アプリ起動時の初期ログ
     setTimeout(() => {
         btEmulator.log("デモ準備完了: ピースを置く操作をシミュレートしてください (DRIVING_START)", 'info');
     }, 500);
