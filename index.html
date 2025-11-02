@@ -3,35 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Vehicle Controller (Futuristic UI)</title>
+    <title>AI Vehicle Controller (Gemini Integrated)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&family=Montserrat:wght=300..700&display=swap" rel="stylesheet">
     <style>
         /* グローバルスタイル */
         body {
-            font-family: 'Montserrat', sans-serif; /* メインフォント */
-            background-color: #0c0f16; /* ディープダークブルー */
-            color: #e0e6f0; /* 明るいオフホワイト */
+            font-family: 'Montserrat', sans-serif;
+            background-color: #0c0f16;
+            color: #e0e6f0;
             display: flex;
             justify-content: center;
-            align-items: center; /* 垂直中央揃え */
+            align-items: center;
             min-height: 100vh;
             padding: 1rem;
-            overflow-x: hidden; /* 横スクロール禁止 */
+            overflow: hidden;
         }
         .container {
             width: 100%;
-            max-width: 520px; /* 少し広げる */
-            background-color: #1a1e26; /* 暗めの背景 */
-            border-radius: 1.5rem; /* 角丸を大きく */
-            box-shadow: 0 10px 30px rgba(0, 255, 255, 0.15), 0 0 5px rgba(0, 255, 255, 0.2); /* サイバーな光沢 */
-            border: 1px solid rgba(0, 255, 255, 0.3); /* 細い枠線 */
+            max-width: 520px;
+            background-color: #1a1e26;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 255, 255, 0.15), 0 0 5px rgba(0, 255, 255, 0.2);
+            border: 1px solid rgba(0, 255, 255, 0.3);
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         /* ヘッダー */
         .header {
-            background-image: linear-gradient(to right, #00c6ff, #0072ff); /* グラデーション */
+            background-image: linear-gradient(to right, #00c6ff, #0072ff);
             color: white;
             padding: 1.5rem;
             text-align: center;
@@ -39,188 +41,171 @@
             position: relative;
         }
         .header h1 {
-            font-family: 'Orbitron', sans-serif; /* 近未来的タイトルフォント */
+            font-family: 'Orbitron', sans-serif;
             font-size: 1.8rem;
             font-weight: 700;
-            letter-spacing: 0.05em; /* 文字間隔 */
+            letter-spacing: 0.05em;
             text-shadow: 0 0 10px rgba(255,255,255,0.7);
-        }
-        .header p {
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.8);
-            margin-top: 0.3rem;
-        }
-        .header::after { /* 下部の光のライン */
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 5%;
-            width: 90%;
-            height: 2px;
-            background: linear-gradient(to right, transparent, #00ffff, transparent);
-            box-shadow: 0 0 8px #00ffff;
         }
 
         /* ステータスボックス */
-        .status-box {
-            padding: 0.8rem 1rem;
-            margin-top: 0.6rem;
-            border-radius: 0.75rem; /* 角丸を大きめに */
-            font-weight: 600;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            border: 1px solid transparent; /* デフォルトの枠線 */
-            transition: all 0.3s ease;
-        }
-        .status-icon {
-            margin-right: 0.75rem;
-            font-size: 1.2em;
-        }
-        .status-driving { 
-            background-color: #0f3d37; 
-            color: #66ffcc; 
-            border-color: #00ff99; 
-            box-shadow: 0 0 8px rgba(0, 255, 153, 0.4);
-        }
-        .status-pause { 
-            background-color: #4a3e0f; 
-            color: #ffe066; 
-            border-color: #ffcc00;
-            box-shadow: 0 0 8px rgba(255, 204, 0, 0.4);
-        }
-        .status-wait { 
-            background-color: #1a2e4f; 
-            color: #99ccff; 
-            border-color: #3399ff;
-            box-shadow: 0 0 8px rgba(51, 153, 255, 0.4);
-        }
-        .status-complete { 
-            background-color: #3a1a4a; 
-            color: #cc99ff; 
-            border-color: #9933ff;
-            box-shadow: 0 0 8px rgba(153, 51, 255, 0.4);
-        }
-        .status-neutral { /* AI Decision, Command Log用 */
-            background-color: #23272f;
-            color: #a0a8b4;
-            border-color: #3f475a;
-        }
-        .command-log-item {
-            display: block;
-            margin-bottom: 0.25rem;
-        }
+        .status-box { padding: 0.8rem 1rem; border-radius: 0.75rem; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; border: 1px solid transparent; transition: all 0.3s ease; }
+        .status-icon { margin-right: 0.75rem; font-size: 1.2em; }
+        .status-driving { background-color: #0f3d37; color: #66ffcc; border-color: #00ff99; box-shadow: 0 0 8px rgba(0, 255, 153, 0.4); }
+        .status-pause { background-color: #4a3e0f; color: #ffe066; border-color: #ffcc00; box-shadow: 0 0 8px rgba(255, 204, 0, 0.4); }
+        .status-wait { background-color: #1a2e4f; color: #99ccff; border-color: #3399ff; box-shadow: 0 0 8px rgba(51, 153, 255, 0.4); }
+        .status-complete { background-color: #3a1a4a; color: #cc99ff; border-color: #9933ff; box-shadow: 0 0 8px rgba(153, 51, 255, 0.4); }
+        .status-neutral { background-color: #23272f; color: #a0a8b4; border-color: #3f475a; display: block; }
+        .command-log-content { display: block; max-height: 80px; overflow-y: auto; margin-top: 0.5rem; }
+        .command-log-item { display: block; margin-bottom: 0.25rem; font-size: 0.85rem; }
         .log-error { color: #ff6b6b; }
         .log-success { color: #66ffcc; }
         .log-info { color: #99ccff; }
 
+        /* AIボタン */
+        .ai-button {
+            background-color: #6a1b9a; /* 紫 */
+            color: white;
+            font-weight: bold;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            margin-top: 0.5rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(106, 27, 154, 0.4);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+        .ai-button:hover {
+            background-color: #8e24aa;
+            box-shadow: 0 6px 15px rgba(142, 36, 170, 0.6);
+        }
+
+        /* モーダル */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none; 
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+        }
+        .modal-content {
+            background-color: #1a1e26;
+            color: #e0e6f0;
+            padding: 2rem;
+            border-radius: 1rem;
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+            border: 2px solid #00c6ff;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+        .modal-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            color: #00ffff;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #00ffff;
+            padding-bottom: 0.5rem;
+        }
+        
         /* カメラとAIオーバーレイ */
-        /* 1. 映像部分のはみ出し修正：外側のパディングを削除 */
         .camera-container {
             position: relative;
-            width: calc(100% - 2.5rem); /* コンテナのパディング1.25rem * 2 を引く */
-            margin: 1.25rem auto 0 auto; /* 中央寄せと上部マージン */
+            width: 100%;
             padding-top: 75%; 
             overflow: hidden;
             background-color: #000;
-            border-radius: 1rem; 
-            border: 2px solid #00c6ff; 
+            border-radius: 1rem;
+            border: 2px solid #00c6ff;
             box-shadow: 0 0 15px rgba(0, 198, 255, 0.6);
+            flex-shrink: 0;
         }
         #viewport {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            border-radius: 1rem;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; border-radius: 1rem;
         }
         #cameraFeed, #aiCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 1.0s ease-out;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 1.0s ease-out;
         }
-        #aiCanvas {
-            pointer-events: none;
-        }
+        #aiCanvas { pointer-events: none; }
         #aiOverlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column; 
-            justify-content: space-between; 
-            padding: 1.25rem; 
-            text-shadow: 0 0 8px rgba(0,0,0,0.8);
-            z-index: 10;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
+            display: flex; flex-direction: column; justify-content: space-between; 
+            padding: 1.25rem; text-shadow: 0 0 8px rgba(0,0,0,0.8); z-index: 10;
         }
         #aiDecisionText {
-            font-family: 'Orbitron', sans-serif; 
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #00ffff; 
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 0.6rem 1rem;
-            border-radius: 0.75rem;
-            align-self: center; /* 中央下部に配置 */
-            margin-top: auto; 
-            border: 1px solid rgba(0, 255, 255, 0.5);
+            font-family: 'Orbitron', sans-serif; font-size: 1.2rem; font-weight: bold; color: #00ffff;
+            background-color: rgba(0, 0, 0, 0.7); padding: 0.6rem 1rem; border-radius: 0.75rem;
+            align-self: center; margin-top: auto; border: 1px solid rgba(0, 255, 255, 0.5);
+            pointer-events: auto; 
         }
 
-        /* ボタン */
-        .control-button {
-            background-image: linear-gradient(to right, #007bff, #00c6ff);
-            color: white;
-            font-weight: bold;
-            padding: 0.75rem 1rem;
-            border-radius: 0.75rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 198, 255, 0.4);
-            border: none;
+        /* タッチコントロールオーバーレイ */
+        #touchControlOverlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%; z-index: 15; 
+            display: flex; flex-direction: column; pointer-events: none;
         }
-        .control-button:hover {
-            background-image: linear-gradient(to right, #00c6ff, #007bff);
-            box-shadow: 0 6px 20px rgba(0, 198, 255, 0.6);
-            transform: translateY(-2px);
+        .touch-zone {
+            flex-grow: 1; pointer-events: auto; user-select: none;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 0.9rem; font-weight: bold; color: rgba(255, 255, 255, 0.5);
+            opacity: 0; transition: opacity 0.2s;
         }
-        .control-button:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 10px rgba(0, 198, 255, 0.4);
+        .touch-zone.active {
+             opacity: 1; 
+             color: #00ffff;
+             background-color: rgba(0, 255, 255, 0.15);
+             border: 2px solid #00ffff;
+             text-shadow: 0 0 5px #00ffff;
         }
-        .control-button:disabled {
-            background-image: none;
-            background-color: #3f475a;
-            color: #a0a8b4;
-            cursor: not-allowed;
-            box-shadow: none;
-            transform: none;
+        #topZone { height: 35%; display: flex; flex-direction: row; }
+        #bottomZone { height: 65%; display: flex; flex-direction: row; }
+        
+        /* 横向き (Landscape) 最適化 CSS */
+        @media (orientation: landscape) {
+            body { padding: 0; min-height: 100vh; display: block; }
+            .container {
+                max-width: none; width: 100vw; height: 100vh; border-radius: 0; box-shadow: none; border: none; margin: 0; overflow: hidden;
+            }
+            .header { display: none; } /* ヘッダー非表示 */
+            #controlPanel { display: none !important; }
+            .camera-container {
+                width: 100%; height: 100%; padding-top: 0; border-radius: 0; box-shadow: none; border: none; margin: 0;
+            }
+            #touchControlOverlay { pointer-events: auto; }
+            #aiOverlay { align-items: flex-start; } /* 横向き時はAI Decision Textを左上に移動 */
+            #aiDecisionText { 
+                align-self: flex-start; 
+                margin-top: 0; 
+                margin-left: 0;
+                font-size: 1.5rem; /* 大きく */
+                padding: 0.8rem 1.2rem;
+            }
         }
-
-        /* 起動ボタン */
-        #startCameraButton {
-            background-image: linear-gradient(to right, #33cc33, #00cc66);
-            box-shadow: 0 4px 15px rgba(51, 204, 51, 0.4);
-        }
-        #startCameraButton:hover {
-            background-image: linear-gradient(to right, #00cc66, #33cc33);
-            box-shadow: 0 6px 20px rgba(51, 204, 51, 0.6);
-        }
+        
     </style>
 </head>
 <body>
 
+<div class="modal-overlay" id="geminiModal">
+    <div class="modal-content">
+        <h2 class="modal-title" id="modalTitle"></h2>
+        <div id="modalBody" class="whitespace-pre-wrap text-sm leading-relaxed"></div>
+        <button onclick="hideModal()" class="ai-button mt-6 bg-red-600 hover:bg-red-700">閉じる</button>
+    </div>
+</div>
+
 <div class="container rounded-3xl shadow-2xl">
     <div class="header">
         <h1 class="text-2xl">AI Vehicle Controller</h1>
-        <p class="text-sm">次世代自律走行システムデモンストレーション</p>
+        <p class="text-sm">Gemini統合 自律走行システム</p>
     </div>
 
     <!-- カメラフィードとAIオーバーレイ -->
@@ -229,50 +214,137 @@
             <video id="cameraFeed" autoplay playsinline></video>
             <canvas id="aiCanvas"></canvas> 
         </div>
+        
+        <!-- タッチコントロールオーバーレイ -->
+        <div id="touchControlOverlay">
+            <div id="topZone">
+                <div id="tl" class="touch-zone"></div> 
+                <div id="tr" class="touch-zone"></div>
+            </div>
+            <div id="bottomZone">
+                <div id="bl" class="touch-zone" data-command="TURN_L">左旋回</div> 
+                <div id="bc" class="touch-zone" data-command="FORWARD">直進</div> 
+                <div id="br" class="touch-zone" data-command="TURN_R">右旋回</div>
+            </div>
+        </div>
+
+        <!-- AI Decision Text (常に表示) -->
         <div id="aiOverlay">
             <span id="aiDecisionText">カメラを起動してください</span>
         </div>
     </div>
 
-    <!-- 制御ステータス -->
-    <div class="p-5 border-t border-gray-700 mt-4">
-        <h2 class="text-lg font-semibold mb-3 text-cyan-400">システムステータス</h2>
-        
-        <div class="flex flex-col space-y-3">
-            <div id="arduinoStatus" class="status-box status-wait">
-                <span class="status-icon">●</span> Arduino State: WAIT_START (待機中)
-            </div>
-            
-            <div id="decisionOutput" class="status-box status-neutral">
-                <span class="status-icon">⚡</span> AI Decision: 監視中
-            </div>
-
-            <div id="commandLog" class="status-box status-neutral text-sm h-20 overflow-y-auto">
-                <span class="status-icon">▶</span> Command Log: -
+    <!-- 制御パネル (縦向き/PC表示用) -->
+    <div id="controlPanel" class="w-full">
+        <div class="p-5 border-t border-gray-700 mt-4">
+            <h2 class="text-lg font-semibold mb-3 text-cyan-400">システムステータス</h2>
+            <div class="flex flex-col space-y-3">
+                <div id="arduinoStatus" class="status-box status-wait">
+                    <span class="status-icon">●</span> Arduino State: WAIT_START (待機中)
+                </div>
+                
+                <div id="decisionOutput" class="status-box status-neutral flex justify-between items-center">
+                    <div>
+                        <span class="status-icon">⚡</span> AI Decision: 監視中
+                    </div>
+                    <!-- Gemini 機能 1: AIの意図説明 -->
+                    <button onclick="explainAIDecision()" class="ai-button">
+                        ✨ AIの意図を説明
+                    </button>
+                </div>
+                
+                <div id="commandLog" class="status-box status-neutral">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="status-icon">▶</span> Command Log
+                         <!-- Gemini 機能 2: 運行ログサマリー -->
+                        <button onclick="summarizeRunLog()" class="ai-button">
+                            ✨ 運行ログサマリーを作成
+                        </button>
+                    </div>
+                    <div class="command-log-content" id="logContent">
+                        -
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- マニュアル操作ボタン（デバッグ用） -->
-    <div class="p-5 border-t border-gray-700">
-        <h2 class="text-lg font-semibold mb-3 text-cyan-400">手動制御 (Bluetooth送信シミュレーション)</h2>
-        <div class="grid grid-cols-3 gap-3">
-            <button onclick="sendManualCommand('TURN_L')" class="control-button">左旋回</button>
-            <button onclick="sendManualCommand('FORWARD')" class="control-button">直進</button>
-            <button onclick="sendManualCommand('TURN_R')" class="control-button">右旋回</button>
+        <div class="p-5 border-t border-gray-700">
+            <h2 class="text-lg font-semibold mb-3 text-cyan-400">操作/起動</h2>
+            <button id="startCameraButton" class="w-full control-button bg-green-500 hover:bg-green-600">カメラ/システム起動</button>
         </div>
-        <button id="startCameraButton" class="mt-4 w-full control-button">カメラ/システム起動</button>
     </div>
 </div>
 
 <script>
     // ******************************************************
-    // I. グローバル設定と状態変数
+    // I. Gemini API 設定とユーティリティ
+    // ******************************************************
+    const API_KEY = ""; // Canvas環境で自動的に提供されます
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${API_KEY}`;
+    
+    let isModalVisible = false;
+
+    function showModal(title, content) {
+        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('modalBody').textContent = content;
+        document.getElementById('geminiModal').style.display = 'flex';
+        isModalVisible = true;
+    }
+
+    function hideModal() {
+        document.getElementById('geminiModal').style.display = 'none';
+        isModalVisible = false;
+    }
+    
+    async function callGeminiAPI(systemPrompt, userQuery, maxRetries = 3) {
+        const payload = {
+            contents: [{ parts: [{ text: userQuery }] }],
+            systemInstruction: {
+                parts: [{ text: systemPrompt }]
+            },
+        };
+
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (response.status === 429 && attempt < maxRetries - 1) {
+                    const delay = Math.pow(2, attempt) * 1000; // 指数バックオフ
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    continue; // リトライ
+                }
+                
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates.length > 0 && result.candidates[0].content?.parts?.[0]?.text) {
+                    return result.candidates[0].content.parts[0].text;
+                } else if (result.error) {
+                    throw new Error(`API Error: ${result.error.message}`);
+                } else {
+                    throw new Error("API response was empty or malformed.");
+                }
+
+            } catch (error) {
+                if (attempt === maxRetries - 1) {
+                    console.error("Gemini API call failed after multiple retries:", error);
+                    throw new Error("API呼び出しに失敗しました。時間をおいて再度お試しください。");
+                }
+            }
+        }
+    }
+
+
+    // ******************************************************
+    // II. グローバル設定と状態変数
     // ******************************************************
     let arduinoState = 'WAIT_START'; 
     let isAiActive = false; 
     let aiLoopInterval = null;
-    const UPDATE_INTERVAL_MS = 1000; // AI推論間隔（1秒）
+    const UPDATE_INTERVAL_MS = 1000;
     const CAMERA_WIDTH = 640;
     const CAMERA_HEIGHT = 480;
 
@@ -281,14 +353,19 @@
     let videoElement = null;
     let isProcessing = false;
     let tempCanvas = null;
+    
+    let currentManualCommand = null;
+    let lastAiDecision = { command: 'STOP', reason: '初期状態', detections: null };
+
 
     // ******************************************************
-    // II. Bluetooth通信のエミュレーション (変更なし)
+    // III. Bluetooth通信のエミュレーション
     // ******************************************************
     class BluetoothEmulator {
         constructor() {
             this.apiUrl = "https://your-arduino-bluetooth-endpoint.com/command"; 
             this.isConnected = false;
+            this.logEntries = []; // ログエントリを保持する配列
         }
         async connect() {
             this.isConnected = true;
@@ -299,25 +376,41 @@
                 this.log(`Bluetooth: 未接続のためコマンド[${command}]を送信できません。`, 'error');
                 return;
             }
-            this.log(`TX: ${command}`, 'success');
+            this.log(`TX: ${command}`, command === 'STOP' ? 'info' : 'success');
         }
         log(message, type = 'info') {
-            const logElement = document.getElementById('commandLog');
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            const logItem = { time: timeString, message: message, type: type, timestamp: now.getTime() };
+            
+            this.logEntries.unshift(logItem); // 配列の先頭に追加
+            
+            // UI更新
+            const logElement = document.getElementById('logContent');
+            if (!logElement) { console.log(message); return; } 
+            
             let colorClass = 'log-info';
             if (type === 'error') colorClass = 'log-error';
             if (type === 'success') colorClass = 'log-success';
 
-            const now = new Date();
-            const timeString = now.toLocaleTimeString();
-
-            logElement.innerHTML = `<span class="${colorClass} command-log-item">[${timeString}] ${message}</span>` + logElement.innerHTML;
-            logElement.scrollTop = 0; // 最新メッセージを常に表示
+            const formattedMessage = `<span class="${colorClass} command-log-item">[${timeString}] ${message}</span>`;
+            
+            // 最新10件だけUIに表示
+            logElement.innerHTML = this.logEntries.slice(0, 10).map(entry => {
+                let uiColor = 'log-info';
+                if (entry.type === 'error') uiColor = 'log-error';
+                if (entry.type === 'success') uiColor = 'log-success';
+                return `<span class="${uiColor} command-log-item">[${entry.time}] ${entry.message}</span>`;
+            }).join('');
+            
+            logElement.scrollTop = 0;
         }
     }
     const btEmulator = new BluetoothEmulator();
 
+
     // ******************************************************
-    // III. AI判断ロジック (Gemini API シミュレーション)
+    // IV. AI判断ロジック (シミュレーション)
     // ******************************************************
     function captureFrameAsBase64() {
         if (!tempCanvas) { tempCanvas = document.createElement('canvas'); }
@@ -336,105 +429,136 @@
         let command = 'FORWARD';
         const detections = [];
         let primaryDetection = null;
+        let decisionReason = "視野内に危険な障害物や追跡対象がないため、直進を継続します。";
 
         if (obstacleChance < 60) {
             let x_center, decision;
 
             if (obstacleChance < 20) { 
-                x_center = 0.20; // 左端
+                x_center = 0.20;
                 command = 'TURN_R';
                 decision = "⚠ ターゲット（左）: 右へ回避＆追尾中";
+                decisionReason = "検出されたターゲット（障害物）が画面の左端に位置しているため、衝突を避けるために右旋回（TURN_R）コマンドを送信しました。同時にカメラもターゲットにズームしています。";
             } else if (obstacleChance < 40) {
-                x_center = 0.80; // 右端
+                x_center = 0.80;
                 command = 'TURN_L';
                 decision = "⚠ ターゲット（右）: 左へ回避＆追尾中";
+                decisionReason = "検出されたターゲット（障害物）が画面の右端に位置しているため、衝突を避けるために左旋回（TURN_L）コマンドを送信しました。同時にカメラもターゲットにズームしています。";
             } else { 
-                x_center = 0.50; // 中央
+                x_center = 0.50;
                 command = 'FORWARD'; 
                 decision = "⚠ ターゲット（中央）: 直進継続＆追尾中";
+                decisionReason = "ターゲットが中央に捉えられており、適正な距離を保てているため、直進（FORWARD）を継続します。";
             }
             
-            primaryDetection = { 
-                x: x_center, 
-                y: 0.7, 
-                w: 0.2, 
-                h: 0.3, 
-                label: 'Tracking Target' 
-            };
+            primaryDetection = { x: x_center, y: 0.7, w: 0.2, h: 0.3, label: 'Tracking Target' };
             detections.push(primaryDetection);
             decisionTextElement.textContent = decision;
-            document.getElementById('decisionOutput').style.color = '#FF4136'; // 赤色
+            document.getElementById('decisionOutput') && (document.getElementById('decisionOutput').style.color = '#FF4136');
             
         } else {
             command = 'FORWARD';
             decisionTextElement.textContent = "✅ 安全走行: 自動追尾停止";
-            document.getElementById('decisionOutput').style.color = '#66ffcc'; // 緑色
+            document.getElementById('decisionOutput') && (document.getElementById('decisionOutput').style.color = '#66ffcc');
         }
         
+        // AIの最終決定をグローバルに保存
+        lastAiDecision = { command, reason: decisionReason, detections, timestamp: new Date().getTime() };
+
         return { command, detections, primaryDetection };
     }
 
     // ******************************************************
-    // IV. 描画と追尾シミュレーション
+    // V. Gemini LLM 連携機能
+    // ******************************************************
+
+    async function explainAIDecision() {
+        if (!isCameraInitialized) {
+            showModal("エラー", "システムを起動してから実行してください。");
+            return;
+        }
+        
+        showModal("✨ AIの意図説明 (Gemini処理中...)", "分析中です。しばらくお待ちください...");
+
+        const { command, reason, timestamp } = lastAiDecision;
+        const formattedTimestamp = new Date(timestamp).toLocaleTimeString();
+        
+        const systemPrompt = "あなたは自律走行車のAIアシスタントです。ユーザーに対し、AIが直前に下した運転判断の理由を、技術的な内容を含めずに、親切で分かりやすい言葉で簡潔に説明してください。";
+        
+        const userQuery = `現在のArduinoステータスは'${arduinoState}'です。AIが${formattedTimestamp}に送信した最新のコマンドは'${command}'で、その内部的な判断理由は以下の通りです。\n\n判断理由: ${reason}\n\nこの情報を基に、なぜAIがその行動を選んだのか説明してください。`;
+
+        try {
+            const explanation = await callGeminiAPI(systemPrompt, userQuery);
+            showModal("✨ AIの意図説明 - 最新の判断", explanation);
+        } catch (error) {
+            showModal("エラー", error.message);
+        }
+    }
+
+    async function summarizeRunLog() {
+        if (btEmulator.logEntries.length === 0) {
+            showModal("エラー", "ログが記録されていません。システムを稼働させてください。");
+            return;
+        }
+
+        showModal("✨ 運行ログサマリー (Gemini処理中...)", "ログを分析し、レポートを作成中です。しばらくお待ちください...");
+
+        const logText = btEmulator.logEntries.map(e => `[${e.time}] [${e.type.toUpperCase()}] ${e.message}`).reverse().join('\n');
+        
+        const systemPrompt = "あなたは運行管理マネージャーです。提供された運行ログを分析し、以下の構造でレポートを作成してください。1. 運行概要（開始/完了時刻、AI制御と手動操作の概算比率）。2. 特筆すべきイベント（エラー、一時停止、主要なAIの切り替え）。3. 次の運行に向けた簡単な改善提案。レポートは日本語で、専門的すぎないトーンで記述してください。";
+        
+        const userQuery = `運行ログ全体は以下の通りです:\n\n${logText}\n\n上記のログに基づいてレポートを作成してください。`;
+
+        try {
+            const summary = await callGeminiAPI(systemPrompt, userQuery);
+            showModal("✨ 運行ログサマリーレポート", summary);
+        } catch (error) {
+            showModal("エラー", error.message);
+        }
+    }
+
+
+    // ******************************************************
+    // VI. 描画、追尾、制御ループ (既存ロジック)
     // ******************************************************
 
     function drawDetections(detections) {
         if (!aiCtx || !aiCanvas) return;
-
         aiCtx.clearRect(0, 0, aiCanvas.width, aiCanvas.height);
-        
         const cw = aiCanvas.width;
         const ch = aiCanvas.height;
-
         detections.forEach(det => {
             const x = det.x * cw - (det.w * cw / 2);
             const y = det.y * ch - (det.h * ch / 2);
             const w = det.w * cw;
             const h = det.h * ch;
-
-            aiCtx.strokeStyle = '#00ffff'; /* シアン */
-            aiCtx.lineWidth = 3;
-            aiCtx.strokeRect(x, y, w, h);
-
-            aiCtx.fillStyle = '#00ffff'; /* シアン */
-            aiCtx.font = 'bold 16px Montserrat'; /* モダンフォント */
+            aiCtx.strokeStyle = '#00ffff'; aiCtx.lineWidth = 3; aiCtx.strokeRect(x, y, w, h);
+            aiCtx.fillStyle = '#00ffff'; aiCtx.font = 'bold 16px Montserrat'; 
             aiCtx.fillText(det.label, x + 5, y + 20);
         });
     }
 
     function updateCameraTracking(targetDetection) {
         const elements = [videoElement, aiCanvas];
-
         if (!targetDetection) {
-            elements.forEach(el => {
-                el.style.transform = `scale(1.0) translate(0, 0)`;
-            });
+            elements.forEach(el => { el.style.transform = `scale(1.0) translate(0, 0)`; });
             return;
         }
-
         const TARGET_SCALE = 1.3; 
         const targetX = targetDetection.x;
         const targetY = targetDetection.y;
-
         const dx = 0.5 - targetX;
         const dy = 0.5 - targetY;
-        
         const translateX = dx * 100 * TARGET_SCALE;
         const translateY = dy * 100 * TARGET_SCALE;
-
         elements.forEach(el => {
             el.style.transform = `scale(${TARGET_SCALE}) translate(${translateX}%, ${translateY}%)`;
         });
-        
         btEmulator.log(`DPTZ: 追尾 (${targetDetection.label}) -> 移動 X:${translateX.toFixed(1)}% Y:${translateY.toFixed(1)}%`, 'info');
     }
 
-    // ******************************************************
-    // V. メイン制御ループ
-    // ******************************************************
-
     async function aiControlLoop() {
-        if (arduinoState !== 'DRIVING' || isProcessing) {
+        if (arduinoState !== 'DRIVING' || isProcessing || isModalVisible) {
              if (arduinoState !== 'DRIVING') {
                  if (aiCtx && aiCanvas) { aiCtx.clearRect(0, 0, aiCanvas.width, aiCanvas.height); }
                  updateCameraTracking(null);
@@ -450,7 +574,7 @@
             
             btEmulator.sendCommand(command);
             
-            document.getElementById('decisionOutput').textContent = `AI Decision: ${command}`;
+            document.getElementById('decisionOutput') && (document.getElementById('decisionOutput').firstChild.nodeValue = '⚡ AI Decision: ' + command + ' ');
 
             drawDetections(detections);
             updateCameraTracking(primaryDetection);
@@ -462,8 +586,9 @@
         }
     }
 
+
     // ******************************************************
-    // VI. カメラ初期化とイベントリスナー (AF強制ロジックを維持)
+    // VII. カメラ初期化と手動操作
     // ******************************************************
     
     let isCameraInitialized = false;
@@ -499,7 +624,6 @@
                     const track = tracks[0];
                     let afSuccess = false;
 
-                    // 左右反転修正
                     const settings = track.getSettings();
                     if (settings.facingMode === 'user' || settings.facingMode === 'left') {
                          videoElement.style.transform = 'scaleX(-1)'; 
@@ -507,25 +631,19 @@
                          videoElement.style.transform = 'scaleX(1)';
                     }
                     
-                    // 連続オートフォーカスを要求
                     try {
                         const capabilities = track.getCapabilities();
                         if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
-                            await track.applyConstraints({
-                                advanced: [{ focusMode: 'continuous' }]
-                            });
+                            await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
                             afSuccess = true;
                         } 
                     } catch (e) {
-                         // AF設定に失敗しても続行（AF非対応のPCプレビューはこちらを通る）
-                         btEmulator.log(`Camera: AF設定試行エラー: ${e.message}`, 'error');
+                         console.error("AF設定試行エラー:", e);
                     }
 
-                    // AF成功/非対応のメッセージをログに出力
                     if (afSuccess) {
                         btEmulator.log('Camera: 連続オートフォーカスを有効化しました。', 'info');
                     } else {
-                        // 2. AF非対応メッセージの抑制：UIに出さずログにだけ記録
                         btEmulator.log('Camera: 連続AFは非対応または設定失敗。スマートフォンで動作を確認してください。', 'info');
                     }
                 }
@@ -536,6 +654,7 @@
                 document.getElementById('aiDecisionText').textContent = "AI監視中...";
                 document.getElementById('startCameraButton').textContent = "システム稼働中";
                 document.getElementById('startCameraButton').disabled = true;
+                setupTouchControls();
 
             };
         } catch (err) {
@@ -546,39 +665,80 @@
 
     function sendManualCommand(command) {
         if (arduinoState === 'DRIVING') {
+            btEmulator.log("AI制御アクティブ中。手動操作は無効です。", 'error');
+            return;
+        }
+        
+        if (command === currentManualCommand) return; 
+        
+        if (command !== 'STOP') {
             btEmulator.sendCommand(command);
-            document.getElementById('decisionOutput').textContent = `Manual Override: ${command}`;
+            currentManualCommand = command;
+            document.getElementById('decisionOutput') && (document.getElementById('decisionOutput').firstChild.nodeValue = '⚡ Manual Control: ' + command + ' ');
         } else {
-            btEmulator.log(`ERROR: ${arduinoState}状態ではマニュアルコマンドは送信できません。`, 'error');
+            btEmulator.sendCommand('STOP');
+            currentManualCommand = null;
+            document.getElementById('decisionOutput') && (document.getElementById('decisionOutput').firstChild.nodeValue = '⚡ Manual Control: STOP ');
         }
     }
+
+    function setupTouchControls() {
+        const overlay = document.getElementById('touchControlOverlay');
+        const touchZones = overlay.querySelectorAll('.touch-zone[data-command]');
+        
+        const startTouch = (e) => {
+            if (arduinoState === 'DRIVING') {
+                btEmulator.log("AI制御アクティブ中。手動操作は無効です。", 'error');
+                return;
+            }
+            e.preventDefault();
+            const targetZone = e.currentTarget;
+            const command = targetZone.getAttribute('data-command');
+
+            if (command && command !== currentManualCommand) {
+                 sendManualCommand(command);
+                 targetZone.classList.add('active');
+            }
+        };
+
+        const endTouch = (e) => {
+            if (arduinoState === 'DRIVING' || !currentManualCommand) return;
+            e.preventDefault();
+            
+            sendManualCommand('STOP');
+            document.querySelectorAll('.touch-zone.active').forEach(el => el.classList.remove('active'));
+        };
+
+        touchZones.forEach(zone => {
+            zone.addEventListener('touchstart', startTouch, { passive: false });
+            zone.addEventListener('touchend', endTouch, { passive: false });
+            zone.addEventListener('touchcancel', endTouch, { passive: false }); 
+            zone.addEventListener('mousedown', startTouch);
+            zone.addEventListener('mouseup', endTouch);
+            zone.addEventListener('mouseleave', endTouch);
+        });
+        
+        btEmulator.log("Manual Control: タッチ操作を有効化しました。", 'info');
+    }
     
-    document.getElementById('startCameraButton').addEventListener('click', startCamera);
+    document.getElementById('startCameraButton') && document.getElementById('startCameraButton').addEventListener('click', startCamera);
 
     // ******************************************************
-    // VII. 発表デモ用：Arduinoステータス変化の模擬 (変更なし)
+    // VIII. 発表デモ用：Arduinoステータス変化の模擬
     // ******************************************************
 
     window.simulateArduinoPieceAction = function(action) {
         switch (action) {
             case 'place_piece':
-                if (arduinoState === 'WAIT_START') {
-                    receiveStatus('DRIVING_START');
-                } else if (arduinoState === 'PAUSE') {
-                    receiveStatus('DRIVING_RESUMED');
-                }
+                if (arduinoState === 'WAIT_START') { receiveStatus('DRIVING_START'); } 
+                else if (arduinoState === 'PAUSE') { receiveStatus('DRIVING_RESUMED'); }
                 break;
             case 'remove_piece':
-                if (arduinoState === 'DRIVING') {
-                    receiveStatus('PAUSE_TRIPPED');
-                } else if (arduinoState === 'COMPLETE') {
-                    receiveStatus('SEQUENCE_RESET');
-                }
+                if (arduinoState === 'DRIVING') { receiveStatus('PAUSE_TRIPPED'); } 
+                else if (arduinoState === 'COMPLETE') { receiveStatus('SEQUENCE_RESET'); }
                 break;
             case 'complete_sequence':
-                 if (arduinoState === 'DRIVING') {
-                     receiveStatus('SEQUENCE_COMPLETE');
-                 }
+                 if (arduinoState === 'DRIVING') { receiveStatus('SEQUENCE_COMPLETE'); }
                  break;
         }
         btEmulator.log(`SIMULATED: Arduino Status Change: ${arduinoState}`, 'info');
@@ -601,7 +761,7 @@
                 break;
             case 'PAUSE_TRIPPED':
                 arduinoState = 'PAUSE';
-                stateText = 'PAUSE (ピース除去により一時停止)';
+                stateText = 'PAUSE (一時停止中: 手動操作可能)';
                 stateClass = 'status-pause';
                 break;
             case 'SEQUENCE_COMPLETE':
@@ -616,11 +776,12 @@
                 btEmulator.log(`ERROR: Unknown status received or reset to WAIT_START: ${status}`, 'error');
                 break;
         }
-
-        document.getElementById('arduinoStatus').textContent = `Arduino State: ${stateText}`;
         
         const statusElement = document.getElementById('arduinoStatus');
-        statusElement.className = `status-box ${stateClass}`; 
+        if (statusElement) {
+            statusElement.textContent = `Arduino State: ${stateText}`;
+            statusElement.className = `status-box ${stateClass}`; 
+        }
     }
 
 </script>
