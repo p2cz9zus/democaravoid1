@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Vehicle Controller Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Interフォントの設定 */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117; /* GitHub Dark Mode Blue-Grey */
+            color: #c9d1d9;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        .container {
+            width: 100%;
+            max-width: 480px; /* スマートフォンサイズに合わせる */
+            background-color: #161b22;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+        .header {
+            background-color: #23272f;
+            color: #e6e6e6;
+        }
+        .status-box {
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+            border-radius: 0.375rem;
+            font-weight: 600;
+        }
+        .status-driving { background-color: #234c20; color: #a5d6a7; } /* Green */
+        .status-pause { background-color: #5d4a13; color: #ffeb3b; } /* Yellow */
+        .status-wait { background-color: #19273c; color: #90caf9; } /* Blue */
+        .status-complete { background-color: #3f1947; color: #ce93d8; } /* Purple */
+
+        /* カメラとAIオーバーレイのためのコンテナ */
+        .camera-container {
+            position: relative;
+            width: 100%;
+            padding-top: 75%; /* 4:3のアスペクト比 */
+            overflow: hidden;
+            background-color: #000;
+        }
+        #cameraFeed {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* カメラ映像を反転 (鏡像) */
+        }
+        #aiOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* クリックイベントを透過 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 5px black;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container rounded-lg shadow-2xl overflow-hidden">
+    <div class="header p-4 text-center">
+        <h1 class="text-xl font-bold">AI Vehicle Controller (Sim)</h1>
+        <p class="text-sm text-gray-400">リアルタイム監視 &amp; Bluetooth司令塔</p>
+    </div>
+
+    <!-- 1. カメラフィードとAIオーバーレイ -->
+    <div class="camera-container">
+        <video id="cameraFeed" autoplay playsinline></video>
+        <div id="aiOverlay" class="p-4">
+            <span id="aiDecisionText">カメラを起動してください</span>
+            <!-- 障害物検知の視覚化（ここではテキストで代用） -->
+        </div>
+    </div>
+
+    <!-- 2. 制御ステータス -->
+    <div class="p-4 border-t border-gray-700">
+        <h2 class="text-lg font-semibold mb-2">システムステータス</h2>
+        
+        <div class="flex flex-col space-y-2">
+            <!-- Arduinoステータス -->
+            <div id="arduinoStatus" class="status-box status-wait">
+                Arduino State: WAIT_START (待機中)
+            </div>
+            
+            <!-- AI判断 -->
+            <div id="decisionOutput" class="status-box bg-gray-700 text-gray-200">
+                AI Decision: 監視中
+            </div>
+
+            <!-- コマンド送信ログ -->
+            <div id="commandLog" class="status-box bg-gray-900 text-gray-500 text-sm h-12 overflow-y-auto">
+                Command Log: -
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. マニュアル操作ボタン（デバッグ用） -->
+    <div class="p-4 border-t border-gray-700">
+        <h2 class="text-lg font-semibold mb-2">手動テスト (Bluetooth送信シミュレーション)</h2>
+        <div class="grid grid-cols-3 gap-2">
+            <button onclick="sendManualCommand('TURN_L')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition">左旋回</button>
+            <button onclick="sendManualCommand('FORWARD')" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg transition">直進</button>
+            <button onclick="sendManualCommand('TURN_R')" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-lg transition">右旋回</button>
+        </div>
+        <button id="startCameraButton" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg transition">カメラ/システム起動</button>
+    </div>
+</div>
+
+<script>
+    // ******************************************************
+    // I. グローバル設定と状態変数
+    // ******************************************************
+    let arduinoState = 'WAIT_START'; // Arduinoの現在の状態
+    let isAiActive = false; // AI制御がアクティブかどうか (DRIVING状態と連動)
+    let aiLoopInterval = null;
+    const UPDATE_INTERVAL_MS = 250; // AI判断とコマンド送信のインターバル (4FPS)
+    const CAMERA_WIDTH = 640;
+    const CAMERA_HEIGHT = 480;
+
+    // ******************************************************
+    // II. Bluetooth通信のエミュレーション
+    // ******************************************************
+
+    /**
+     * Bluetooth通信をシミュレートするクラス
+     * 実際にはCore BluetoothのAPIに置き換えられる部分
+     */
+    class BluetoothEmulator {
+        constructor() {
+            this.apiUrl = "https://your-arduino-bluetooth-endpoint.com/command"; // 実際にはBluetooth API
+            this.isConnected = false;
+        }
+
+        async connect() {
+            // 実際の接続処理
+            this.isConnected = true;
+            this.log('Bluetooth: 接続成功。Arduinoからのステータス待機中。');
+        }
+
+        async sendCommand(command) {
+            if (!this.isConnected) {
+                this.log(`Bluetooth: 未接続のためコマンド[${command}]を送信できません。`, true);
+                return;
+            }
+            
+            // 実際にはCore BluetoothのwriteValue()メソッドに相当
+            this.log(`TX: ${command}`);
+
+            // === 状態を切り替える模擬信号を受信 (Arduinoからの応答をシミュレート) ===
+            this.simulateArduinoResponse(command);
+        }
+
+        log(message, isError = false) {
+            const logElement = document.getElementById('commandLog');
+            const colorClass = isError ? 'text-red-400' : 'text-green-400';
+            logElement.innerHTML = `<span class="${colorClass}">${message}</span><br>` + logElement.innerHTML;
+        }
+
+        /**
+         * Arduinoからのステータス通知をシミュレートする (双方向通信の再現)
+         * @param {string} sentCommand - 送信したコマンド
+         */
+        simulateArduinoResponse(sentCommand) {
+             // ユーザーが手動で状態を切り替えるためのUI要素を非表示にするため、ここではシミュレーションしません。
+             // 実際には、Arduino側からのコールバックとして`receiveStatus`が呼ばれます。
+        }
+    }
+
+    const btEmulator = new BluetoothEmulator();
+
+    // ******************************************************
+    // III. AI判断ロジック (コア機能)
+    // ******************************************************
+
+    /**
+     * カメラ映像を分析し、最適な駆動コマンドを決定する (AIモデルの推論と判断ロジックの模擬)
+     * @returns {string} 決定されたコマンド ('FORWARD', 'TURN_L', 'TURN_R', 'STOP')
+     */
+    function analyzeFrame() {
+        // 実際には、ここでCore MLモデルを実行し、障害物のバウンディングボックスを取得します。
+        
+        const decisionTextElement = document.getElementById('aiDecisionText');
+
+        // === AI判断の模擬ロジック ===
+        // 0から99までの乱数を生成
+        const obstacleChance = Math.floor(Math.random() * 100); 
+
+        if (obstacleChance < 15) {
+            // 15%の確率で中央に障害物
+            decisionTextElement.textContent = "⚠ 障害物（中央）: 右へ回避";
+            return 'TURN_R';
+        } else if (obstacleChance < 30) {
+            // 15%の確率で左に障害物
+            decisionTextElement.textContent = "⚠ 障害物（左）: 右へ回避";
+            return 'TURN_R';
+        } else if (obstacleChance < 40) {
+            // 10%の確率で車線を逸脱
+            decisionTextElement.textContent = "➡ 車線中央へ戻る";
+            return 'TURN_L';
+        } else {
+            // 60%の確率で安全
+            decisionTextElement.textContent = "✅ 安全走行: 直進継続";
+            return 'FORWARD';
+        }
+    }
+
+    // ******************************************************
+    // IV. メイン制御ループ
+    // ******************************************************
+
+    /**
+     * AI制御のメインループ
+     * DRIVING状態でのみ駆動コマンドを生成・送信する
+     */
+    function aiControlLoop() {
+        if (arduinoState === 'DRIVING') {
+            isAiActive = true;
+            const command = analyzeFrame();
+            
+            // AIが決定したコマンドをArduinoへ送信
+            btEmulator.sendCommand(command);
+            
+            // 教授向けに、AIが介入していることをログに出力
+            document.getElementById('decisionOutput').textContent = `AI Decision: ${command}`;
+        } else {
+            // DRIVING状態ではない場合はAI制御を停止 (コマンドは送信されない)
+            if (isAiActive) {
+                isAiActive = false;
+                btEmulator.sendCommand('STOP'); // 停止コマンドを送信し、モーターを確実に止める
+                document.getElementById('decisionOutput').textContent = `AI Decision: ${arduinoState}のため停止`;
+            }
+        }
+    }
+
+    // ******************************************************
+    // V. UIとArduinoステータスの更新
+    // ******************************************************
+
+    /**
+     * Arduinoからのステータス（課題の進行状況）を受信し、状態を更新する
+     * @param {string} status - Arduinoから受信した最新のステータス
+     */
+    function receiveStatus(status) {
+        let stateText;
+        let stateClass;
+        
+        switch (status) {
+            case 'DRIVING_START':
+            case 'DRIVING_RESUMED':
+                arduinoState = 'DRIVING';
+                stateText = 'DRIVING (AI制御アクティブ)';
+                stateClass = 'status-driving';
+                break;
+            case 'PAUSE_TRIPPED':
+                arduinoState = 'PAUSE';
+                stateText = 'PAUSE (ピース除去により一時停止)';
+                stateClass = 'status-pause';
+                break;
+            case 'SEQUENCE_COMPLETE':
+                arduinoState = 'COMPLETE';
+                stateText = 'COMPLETE (課題完了)';
+                stateClass = 'status-complete';
+                break;
+            case 'SEQUENCE_RESET':
+                arduinoState = 'WAIT_START';
+                stateText = 'WAIT_START (待機中)';
+                stateClass = 'status-wait';
+                break;
+            default:
+                // 未知のステータスの場合、エラーとして処理
+                btEmulator.log(`ERROR: Unknown status received: ${status}`, true);
+                return;
+        }
+
+        document.getElementById('arduinoStatus').textContent = `Arduino State: ${stateText}`;
+        
+        const statusElement = document.getElementById('arduinoStatus');
+        statusElement.className = `status-box ${stateClass}`; // クラスを完全に置き換える
+
+        // 状態が変更されたら、直ちにAI制御ループを実行
+        // (これにより、PAUSE -> DRIVINGへの遷移時に即座にAI制御が再開される)
+        aiControlLoop(); 
+    }
+    
+    // ******************************************************
+    // VI. カメラ初期化とイベントリスナー
+    // ******************************************************
+    
+    let isCameraInitialized = false;
+
+    // カメラフィードを開始する関数
+    async function startCamera() {
+        if (isCameraInitialized) return;
+
+        const video = document.getElementById('cameraFeed');
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { width: CAMERA_WIDTH, height: CAMERA_HEIGHT, facingMode: 'environment' } 
+            });
+            video.srcObject = stream;
+            
+            // カメラがロードされたらBluetooth接続とAIループを開始
+            video.onloadedmetadata = () => {
+                btEmulator.connect(); // Bluetooth接続シミュレーション
+                aiLoopInterval = setInterval(aiControlLoop, UPDATE_INTERVAL_MS);
+                isCameraInitialized = true;
+                document.getElementById('aiDecisionText').textContent = "AI監視中...";
+                document.getElementById('startCameraButton').textContent = "システム稼働中";
+                document.getElementById('startCameraButton').disabled = true;
+
+                // 発表デモのために、初期シーケンスを開始（WAIT_START -> DRIVING_START）を模擬
+                // 実際はArduinoのピース設置で発生
+                setTimeout(() => {
+                    receiveStatus('DRIVING_START'); 
+                }, 2000); 
+            };
+        } catch (err) {
+            document.getElementById('aiDecisionText').textContent = "⚠ カメラ起動エラー: HTTPS環境と権限が必要です";
+            btEmulator.log(`Camera Error: ${err.message}`, true);
+        }
+    }
+
+    // 手動コマンド送信 (デバッグ用)
+    function sendManualCommand(command) {
+        if (arduinoState === 'DRIVING') {
+            btEmulator.sendCommand(command);
+            document.getElementById('decisionOutput').textContent = `Manual Override: ${command}`;
+        } else {
+            btEmulator.log(`ERROR: ${arduinoState}状態ではマニュアルコマンドは送信できません。`, true);
+        }
+    }
+    
+    // 起動ボタンイベント
+    document.getElementById('startCameraButton').addEventListener('click', startCamera);
+
+    // ******************************************************
+    // VII. 発表デモ用：Arduinoステータス変化の模擬
+    // ******************************************************
+
+    // 教授陣へのデモ時、ピース操作を模擬してArduinoからのステータスをアプリに「送信」する関数
+    window.simulateArduinoPieceAction = function(action) {
+        switch (action) {
+            case 'place_piece':
+                // WAIT_START -> DRIVING_START、または PAUSE -> DRIVING_RESUMED
+                if (arduinoState === 'WAIT_START') {
+                    receiveStatus('DRIVING_START');
+                } else if (arduinoState === 'PAUSE') {
+                    receiveStatus('DRIVING_RESUMED');
+                }
+                break;
+            case 'remove_piece':
+                // DRIVING -> PAUSE_TRIPPED
+                if (arduinoState === 'DRIVING') {
+                    receiveStatus('PAUSE_TRIPPED');
+                } else if (arduinoState === 'COMPLETE') {
+                    receiveStatus('SEQUENCE_RESET');
+                }
+                break;
+            case 'complete_sequence':
+                 // シーケンス完了を強制的に通知
+                 if (arduinoState === 'DRIVING') {
+                     receiveStatus('SEQUENCE_COMPLETE');
+                 }
+                 break;
+        }
+        btEmulator.log(`SIMULATED: Arduino Status Change: ${arduinoState}`);
+    };
+
+    // デモをスムーズにするため、初期状態から数秒後にDRIVING状態への移行を促すメッセージ
+    setTimeout(() => {
+        btEmulator.log("デモ準備完了: ピースを置く操作をシミュレートしてください (DRIVING_START)", false);
+    }, 500);
+
+</script>
+</body>
+</html>
