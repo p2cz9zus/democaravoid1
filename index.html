@@ -54,8 +54,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            /* 修正点: 左右反転を解除 */
-            /* transform: scaleX(-1); */ 
+            /* transform: scaleX(-1); は削除済み */
         }
         #aiOverlay {
             position: absolute;
@@ -314,13 +313,27 @@
         const video = document.getElementById('cameraFeed');
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ 
-                // 外部（背面）カメラを優先
+                // 背面カメラを優先
                 video: { width: CAMERA_WIDTH, height: CAMERA_HEIGHT, facingMode: 'environment' } 
             });
             video.srcObject = stream;
             
-            // カメラがロードされたらBluetooth接続とAIループを開始
+            // 【重要修正点】
+            // カメラのメタデータがロードされた後、ストリームのトラックを確認
             video.onloadedmetadata = () => {
+                const tracks = stream.getVideoTracks();
+                if (tracks.length > 0) {
+                    const settings = tracks[0].getSettings();
+                    
+                    // もしフロントカメラ（user）が使われている可能性があれば、CSSを上書きして強制的に反転解除
+                    // 通常、背面カメラ(environment)では反転は不要だが、保険として設定
+                    if (settings.facingMode && settings.facingMode === 'user') {
+                         video.style.transform = 'scaleX(-1)'; // フロントカメラの場合は反転させる
+                    } else {
+                         video.style.transform = 'scaleX(1)'; // 背面カメラの場合は反転を解除する
+                    }
+                }
+
                 btEmulator.connect(); // Bluetooth接続シミュレーション
                 aiLoopInterval = setInterval(aiControlLoop, UPDATE_INTERVAL_MS);
                 isCameraInitialized = true;
