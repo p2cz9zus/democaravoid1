@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Vehicle Controller (Futuristic UI)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&family=Montserrat:wght@300..700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&family=Montserrat:wght=300..700&display=swap" rel="stylesheet">
     <style>
         /* グローバルスタイル */
         body {
@@ -115,14 +115,16 @@
         .log-info { color: #99ccff; }
 
         /* カメラとAIオーバーレイ */
+        /* 1. 映像部分のはみ出し修正：外側のパディングを削除 */
         .camera-container {
             position: relative;
-            width: 100%;
+            width: calc(100% - 2.5rem); /* コンテナのパディング1.25rem * 2 を引く */
+            margin: 1.25rem auto 0 auto; /* 中央寄せと上部マージン */
             padding-top: 75%; 
             overflow: hidden;
             background-color: #000;
-            border-radius: 1rem; /* 角丸を合わせる */
-            border: 2px solid #00c6ff; /* 強調枠 */
+            border-radius: 1rem; 
+            border: 2px solid #00c6ff; 
             box-shadow: 0 0 15px rgba(0, 198, 255, 0.6);
         }
         #viewport {
@@ -154,27 +156,23 @@
             height: 100%;
             pointer-events: none;
             display: flex;
-            flex-direction: column; /* 要素を縦に並べる */
-            justify-content: space-between; /* 上下端に配置 */
-            padding: 1.25rem; /* パディングを増やす */
+            flex-direction: column; 
+            justify-content: space-between; 
+            padding: 1.25rem; 
             text-shadow: 0 0 8px rgba(0,0,0,0.8);
             z-index: 10;
         }
         #aiDecisionText {
-            font-family: 'Orbitron', sans-serif; /* AIの判断テキストも近未来フォント */
+            font-family: 'Orbitron', sans-serif; 
             font-size: 1.2rem;
             font-weight: bold;
-            color: #00ffff; /* シアン */
+            color: #00ffff; 
             background-color: rgba(0, 0, 0, 0.7);
             padding: 0.6rem 1rem;
             border-radius: 0.75rem;
-            align-self: flex-start; /* 左上 */
+            align-self: center; /* 中央下部に配置 */
+            margin-top: auto; 
             border: 1px solid rgba(0, 255, 255, 0.5);
-        }
-        /* AI Decision Textを中央下部に配置 */
-        #aiDecisionText.bottom-center {
-            align-self: center;
-            margin-top: auto; /* 下部に配置 */
         }
 
         /* ボタン */
@@ -225,17 +223,19 @@
         <p class="text-sm">次世代自律走行システムデモンストレーション</p>
     </div>
 
-    <!-- カメラフィードとAIオーバーレイ --><div class="camera-container mt-4 mx-4">
+    <!-- カメラフィードとAIオーバーレイ -->
+    <div class="camera-container">
         <div id="viewport">
             <video id="cameraFeed" autoplay playsinline></video>
             <canvas id="aiCanvas"></canvas> 
         </div>
         <div id="aiOverlay">
-            <span id="aiDecisionText" class="bottom-center">カメラを起動してください</span>
+            <span id="aiDecisionText">カメラを起動してください</span>
         </div>
     </div>
 
-    <!-- 制御ステータス --><div class="p-5 border-t border-gray-700 mt-4">
+    <!-- 制御ステータス -->
+    <div class="p-5 border-t border-gray-700 mt-4">
         <h2 class="text-lg font-semibold mb-3 text-cyan-400">システムステータス</h2>
         
         <div class="flex flex-col space-y-3">
@@ -253,7 +253,8 @@
         </div>
     </div>
 
-    <!-- マニュアル操作ボタン（デバッグ用） --><div class="p-5 border-t border-gray-700">
+    <!-- マニュアル操作ボタン（デバッグ用） -->
+    <div class="p-5 border-t border-gray-700">
         <h2 class="text-lg font-semibold mb-3 text-cyan-400">手動制御 (Bluetooth送信シミュレーション)</h2>
         <div class="grid grid-cols-3 gap-3">
             <button onclick="sendManualCommand('TURN_L')" class="control-button">左旋回</button>
@@ -496,6 +497,7 @@
                 const tracks = stream.getVideoTracks();
                 if (tracks.length > 0) {
                     const track = tracks[0];
+                    let afSuccess = false;
 
                     // 左右反転修正
                     const settings = track.getSettings();
@@ -512,12 +514,19 @@
                             await track.applyConstraints({
                                 advanced: [{ focusMode: 'continuous' }]
                             });
-                            btEmulator.log('Camera: 連続オートフォーカスを有効化しました。', 'info');
-                        } else {
-                            btEmulator.log('Camera: 連続AFはサポートされていません。', 'error');
-                        }
+                            afSuccess = true;
+                        } 
                     } catch (e) {
-                        btEmulator.log(`Camera: AF設定エラー: ${e.message}`, 'error');
+                         // AF設定に失敗しても続行（AF非対応のPCプレビューはこちらを通る）
+                         btEmulator.log(`Camera: AF設定試行エラー: ${e.message}`, 'error');
+                    }
+
+                    // AF成功/非対応のメッセージをログに出力
+                    if (afSuccess) {
+                        btEmulator.log('Camera: 連続オートフォーカスを有効化しました。', 'info');
+                    } else {
+                        // 2. AF非対応メッセージの抑制：UIに出さずログにだけ記録
+                        btEmulator.log('Camera: 連続AFは非対応または設定失敗。スマートフォンで動作を確認してください。', 'info');
                     }
                 }
 
@@ -601,7 +610,6 @@
                 stateClass = 'status-complete';
                 break;
             default:
-                // 未知のステータスの場合でもWAIT_STARTにリセット
                 arduinoState = 'WAIT_START';
                 stateText = 'WAIT_START (待機中)';
                 stateClass = 'status-wait';
