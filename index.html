@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Vehicle Controller (Gemini Integrated)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&family=Montserrat:wght=300..700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght=400..900&family=Montserrat:wght=300..700&display=swap" rel="stylesheet">
     <style>
         /* グローバルスタイル */
         body {
@@ -17,7 +17,7 @@
             align-items: center;
             min-height: 100vh;
             padding: 1rem;
-            overflow: hidden;
+            /* overflow: hidden; は削除済み */
         }
         .container {
             width: 100%;
@@ -62,7 +62,7 @@
         .log-success { color: #66ffcc; }
         .log-info { color: #99ccff; }
 
-        /* AIボタン */
+        /* AIボタン (機能ボタン) */
         .ai-button {
             background-color: #6a1b9a; /* 紫 */
             color: white;
@@ -80,6 +80,20 @@
         .ai-button:hover {
             background-color: #8e24aa;
             box-shadow: 0 6px 15px rgba(142, 36, 170, 0.6);
+        }
+
+        /* コントロールボタン (起動/ヘルプなど) */
+        .control-button {
+            font-weight: bold;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            color: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+        }
+        .control-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         /* モーダル */
@@ -113,6 +127,14 @@
             margin-bottom: 1rem;
             border-bottom: 1px solid #00ffff;
             padding-bottom: 0.5rem;
+        }
+        .help-section h3 {
+            font-weight: bold;
+            color: #66ffcc;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid #66ffcc;
+            padding-left: 0.5rem;
         }
         
         /* カメラとAIオーバーレイ */
@@ -194,6 +216,7 @@
 </head>
 <body>
 
+<!-- モーダル (Gemini用とHelp用の共通構造) -->
 <div class="modal-overlay" id="geminiModal">
     <div class="modal-content">
         <h2 class="modal-title" id="modalTitle"></h2>
@@ -270,7 +293,12 @@
 
         <div class="p-5 border-t border-gray-700">
             <h2 class="text-lg font-semibold mb-3 text-cyan-400">操作/起動</h2>
-            <button id="startCameraButton" class="w-full control-button bg-green-500 hover:bg-green-600">カメラ/システム起動</button>
+            <div class="flex space-x-2">
+                 <!-- 起動ボタン -->
+                <button id="startCameraButton" class="control-button bg-green-500 hover:bg-green-600 flex-grow">カメラ/システム起動</button>
+                <!-- ヘルプボタン (追加) -->
+                <button onclick="showHelpModal()" class="control-button bg-indigo-500 hover:bg-indigo-600 flex-shrink-0 w-24">ヘルプ 💡</button>
+            </div>
         </div>
     </div>
 </div>
@@ -284,9 +312,16 @@
     
     let isModalVisible = false;
 
-    function showModal(title, content) {
+    function showModal(title, content, isHtml = false) {
         document.getElementById('modalTitle').textContent = title;
-        document.getElementById('modalBody').textContent = content;
+        const modalBody = document.getElementById('modalBody');
+        if (isHtml) {
+            modalBody.innerHTML = content;
+            modalBody.className = 'text-sm leading-relaxed'; 
+        } else {
+            modalBody.textContent = content;
+            modalBody.className = 'whitespace-pre-wrap text-sm leading-relaxed'; 
+        }
         document.getElementById('geminiModal').style.display = 'flex';
         isModalVisible = true;
     }
@@ -474,11 +509,11 @@
 
     async function explainAIDecision() {
         if (!isCameraInitialized) {
-            showModal("エラー", "システムを起動してから実行してください。");
+            showModal("エラー", "システムを起動してから実行してください。", false);
             return;
         }
         
-        showModal("✨ AIの意図説明 (Gemini処理中...)", "分析中です。しばらくお待ちください...");
+        showModal("✨ AIの意図説明 (Gemini処理中...)", "分析中です。しばらくお待ちください...", false);
 
         const { command, reason, timestamp } = lastAiDecision;
         const formattedTimestamp = new Date(timestamp).toLocaleTimeString();
@@ -489,19 +524,19 @@
 
         try {
             const explanation = await callGeminiAPI(systemPrompt, userQuery);
-            showModal("✨ AIの意図説明 - 最新の判断", explanation);
+            showModal("✨ AIの意図説明 - 最新の判断", explanation, false);
         } catch (error) {
-            showModal("エラー", error.message);
+            showModal("エラー", error.message, false);
         }
     }
 
     async function summarizeRunLog() {
         if (btEmulator.logEntries.length === 0) {
-            showModal("エラー", "ログが記録されていません。システムを稼働させてください。");
+            showModal("エラー", "ログが記録されていません。システムを稼働させてください。", false);
             return;
         }
 
-        showModal("✨ 運行ログサマリー (Gemini処理中...)", "ログを分析し、レポートを作成中です。しばらくお待ちください...");
+        showModal("✨ 運行ログサマリー (Gemini処理中...)", "ログを分析し、レポートを作成中です。しばらくお待ちください...", false);
 
         const logText = btEmulator.logEntries.map(e => `[${e.time}] [${e.type.toUpperCase()}] ${e.message}`).reverse().join('\n');
         
@@ -511,15 +546,55 @@
 
         try {
             const summary = await callGeminiAPI(systemPrompt, userQuery);
-            showModal("✨ 運行ログサマリーレポート", summary);
+            showModal("✨ 運行ログサマリーレポート", summary, false);
         } catch (error) {
-            showModal("エラー", error.message);
+            showModal("エラー", error.message, false);
         }
+    }
+    
+    // ******************************************************
+    // VI. ヘルプ/補足情報モーダル
+    // ******************************************************
+    function showHelpModal() {
+        const helpContent = `
+            <div class="help-section">
+                <h3>システム概要</h3>
+                <p>このアプリケーションは、スマートフォンカメラの映像をAIに見立て、仮想的なAIコマンド（FORWARD/TURN_L/TURN_R）をシミュレーションのArduinoに送信するデモです。</p>
+                <p>手動モードでは、横向きにした際の画面下の3つのエリアをタップすることで操作が可能です。</p>
+            </div>
+            <div class="help-section">
+                <h3>操作手順</h3>
+                <ol class="list-decimal list-inside ml-2">
+                    <li>「カメラ/システム起動」ボタンをタップし、カメラとシステムを起動します。</li>
+                    <li><strong>WAIT_START</strong> ステータスの間は操作待機中です。</li>
+                    <li>デモ用機能: ` + '`simulateArduinoPieceAction(\'place_piece\')`' + `をコンソールで実行すると **DRIVING** 状態に移行します。</li>
+                    <li>**DRIVING** 状態になるとAI制御が開始されます。</li>
+                    <li>端末を横向きにすると、全画面のタッチ操作UIに切り替わります。</li>
+                </ol>
+            </div>
+            <div class="help-section">
+                <h3>Arduinoステータスと意味</h3>
+                <ul class="list-disc list-inside ml-2">
+                    <li><strong>WAIT_START</strong>: システム起動済み。課題開始（ピース設置など）を待機中。</li>
+                    <li><strong>DRIVING</strong>: AIによる自律走行モード。手動操作は無効。</li>
+                    <li><strong>PAUSE</strong>: 割り込み（ピース取り外しなど）により一時停止中。手動操作が可能。</li>
+                    <li><strong>COMPLETE</strong>: 課題完了。AI制御は停止。</li>
+                </ul>
+            </div>
+            <div class="help-section">
+                <h3>Gemini AI 連携機能</h3>
+                <ul class="list-disc list-inside ml-2">
+                    <li><strong>AIの意図を説明</strong>: AIが直前に下した運転判断（コマンド）の根拠を、Geminiが分かりやすい言葉で解説します。</li>
+                    <li><strong>運行ログサマリーを作成</strong>: 記録されたコマンドログをGeminiが分析し、運行全体のサマリーレポートを生成します。</li>
+                </ul>
+            </div>
+        `;
+        showModal("💡 ヘルプと補足情報", helpContent, true);
     }
 
 
     // ******************************************************
-    // VI. 描画、追尾、制御ループ (既存ロジック)
+    // VII. 描画、追尾、制御ループ (既存ロジック)
     // ******************************************************
 
     function drawDetections(detections) {
@@ -588,7 +663,7 @@
 
 
     // ******************************************************
-    // VII. カメラ初期化と手動操作
+    // VIII. カメラ初期化と手動操作
     // ******************************************************
     
     let isCameraInitialized = false;
@@ -724,14 +799,14 @@
     document.getElementById('startCameraButton') && document.getElementById('startCameraButton').addEventListener('click', startCamera);
 
     // ******************************************************
-    // VIII. 発表デモ用：Arduinoステータス変化の模擬
+    // IX. 発表デモ用：Arduinoステータス変化の模擬
     // ******************************************************
 
     window.simulateArduinoPieceAction = function(action) {
         switch (action) {
             case 'place_piece':
-                if (arduinoState === 'WAIT_START') { receiveStatus('DRIVING_START'); } 
-                else if (arduinoState === 'PAUSE') { receiveStatus('DRIVING_RESUMED'); }
+                if (arduinoState === 'WAIT_START' || arduinoState === 'PAUSE') { receiveStatus('DRIVING_START'); } 
+                // PAUSE_TRIPPEDとDRIVING_RESUMEDは同じ処理でDRIVINGに戻るように統合
                 break;
             case 'remove_piece':
                 if (arduinoState === 'DRIVING') { receiveStatus('PAUSE_TRIPPED'); } 
@@ -763,11 +838,13 @@
                 arduinoState = 'PAUSE';
                 stateText = 'PAUSE (一時停止中: 手動操作可能)';
                 stateClass = 'status-pause';
+                updateCameraTracking(null); 
                 break;
             case 'SEQUENCE_COMPLETE':
                 arduinoState = 'COMPLETE';
                 stateText = 'COMPLETE (課題完了)';
                 stateClass = 'status-complete';
+                updateCameraTracking(null); 
                 break;
             default:
                 arduinoState = 'WAIT_START';
