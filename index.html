@@ -207,8 +207,8 @@
 
 <div class="container rounded-3xl shadow-2xl">
     <div class="header">
-        <h1 class="text-2xl">AI Vehicle Controller</h1>
-        <p class="text-sm">Gemini統合 自律走行システム</p>
+        <h1 class="text-2xl">Vehicle Controller</h1>
+        <p class="text-sm">障害物回避機能</p>
     </div>
 
     <!-- カメラフィードとAIオーバーレイ -->
@@ -251,9 +251,7 @@
                 
                 <!-- AI決定出力 -->
                 <div id="decisionOutput" class="status-box status-neutral flex justify-between items-center">
-                    <div>
-                        <span class="status-icon">⚡</span> AI Decision: 監視中
-                    </div>
+                    
                     <!-- Gemini 機能 1: AIの意図説明 -->
                     <button onclick="explainAIDecision()" class="ai-button">
                         ✨ AIの意図を説明
@@ -546,32 +544,33 @@
         const helpContent = `
             <div class="help-section">
                 <h3>システム概要</h3>
-                <p>このアプリケーションは、スマートフォンカメラの映像をAIに見立て、仮想的なAIコマンド（FORWARD/TURN_L/TURN_R）をシミュレーションのArduinoに送信するデモです。</p>
-                <p>手動モードでは、画面上のカメラ映像エリアの下部3分の2のエリアをタップすることで操作が可能です。</p>
+                <p>このアプリケーションは、スマートフォンカメラを利用し障害物を検知し、検知結果に基づいて回避方法をArduinoに送信するデモです。</p>
+                <p>手動モードでは、画面上のカメラ映像エリアの下部3分の2のエリアをタップすることで障害物を回避する操作が可能です。</p>
             </div>
             <div class="help-section">
                 <h3>操作手順</h3>
                 <ol class="list-decimal list-inside ml-2">
                     <li>「カメラ/システム起動」ボタンをタップし、カメラとシステムを起動します。</li>
                     <li><strong>WAIT_START</strong> ステータスの間は操作待機中です。</li>
-                    <li>デモ用機能: ` + '`simulateArduinoPieceAction(\'place_piece\')`' + `をコンソールで実行すると **DRIVING** 状態に移行します。</li>
-                    <li>**DRIVING** 状態になるとAI制御が開始されます。</li>
+                    <li>デモ用機能: ` + '`simulateArduinoPieceAction(\'place_piece\')`' + `をコンソールで実行すると DRIVING 状態に移行します。</li>
+                    <li>DRIVING 状態になると障害物検知が開始されます。</li>
                 </ol>
             </div>
             <div class="help-section">
                 <h3>Arduinoステータスと意味</h3>
                 <ul class="list-disc list-inside ml-2">
-                    <li><strong>WAIT_START</strong>: システム起動済み。課題開始（ピース設置など）を待機中。</li>
-                    <li><strong>DRIVING</strong>: AIによる自律走行モード。手動操作は無効。</li>
-                    <li><strong>PAUSE</strong>: 割り込み（ピース取り外しなど）により一時停止中。手動操作が可能。</li>
+                    <li><strong>WAIT_START</strong>: システム起動済み。金属ピース設置を待機中。</li>
+                    <li><strong>DRIVING</strong>: 事前に指定されたコードに従い自律走行します。また、障害物を検知し、回避方法をArduinoに送信します。</li>
+                    <li><strong>PAUSE</strong>: ピース取り外しなどにより一時停止。</li>
                     <li><strong>COMPLETE</strong>: 課題完了。AI制御は停止。</li>
                 </ul>
             </div>
             <div class="help-section">
                 <h3>Gemini AI 連携機能</h3>
                 <ul class="list-disc list-inside ml-2">
-                    <li><strong>AIの意図を説明</strong>: AIが直前に下した運転判断（コマンド）の根拠を、Geminiが分かりやすい言葉で解説します。</li>
-                    <li><strong>運行ログサマリーを作成</strong>: 記録されたコマンドログをGeminiが分析し、運行全体のサマリーレポートを生成します。</li>
+                　　<li><strong>注意点</strong>: 本機能を使用するためには、Gemini APIキーを事前に保有しておく必要があります。</li>
+                    <li><strong>AIの意図を説明</strong>: 障害物検知結果・回避方法についてGeminiが解説します。</li>
+                    <li><strong>運行ログの作成</strong>: 記録されたコマンドログをGeminiが分析し、運行全体のログを生成します。</li>
                 </ul>
             </div>
         `;
@@ -813,7 +812,7 @@
     
     // アプリ起動時の初期ログ
     setTimeout(() => {
-        btEmulator.log("デモ準備完了: ピースを置く操作をシミュレートしてください (DRIVING_START)", 'info');
+        btEmulator.log("デモ準備完了: 金属ピースを置いてください (DRIVING_START)", 'info');
     }, 500);
     
     function receiveStatus(status) {
@@ -824,12 +823,12 @@
             case 'DRIVING_START':
             case 'DRIVING_RESUMED':
                 arduinoState = 'DRIVING';
-                stateText = 'DRIVING (AI制御アクティブ)';
+                stateText = 'DRIVING (障害物検知機能起動中)';
                 stateClass = 'status-driving';
                 break;
             case 'PAUSE_TRIPPED':
                 arduinoState = 'PAUSE';
-                stateText = 'PAUSE (一時停止中: 手動操作可能)';
+                stateText = 'PAUSE (一時停止中)';
                 stateClass = 'status-pause';
                 updateCameraTracking(null); 
                 break;
@@ -857,3 +856,4 @@
 </script>
 </body>
 </html>
+
